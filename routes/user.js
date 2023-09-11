@@ -17,10 +17,10 @@ const OpenAI = require('openai');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/'); 
+    cb(null, 'uploads/');
   },
   filename: (req, file, cb) => {
-    cb(null, file.originalname); 
+    cb(null, file.originalname);
   },
 });
 
@@ -37,7 +37,7 @@ const sentimentApiOptions = {
   url: 'https://text-sentiment.p.rapidapi.com/analyze',
   headers: {
     'content-type': 'application/x-www-form-urlencoded',
-    'X-RapidAPI-Key': process.env.RapidAPI-Key,
+    'X-RapidAPI-Key': process.env.RAPID_API_KEY,
     'X-RapidAPI-Host': 'text-sentiment.p.rapidapi.com'
   },
 };
@@ -47,9 +47,9 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const runPrompt = async (trimmedData,userID) => {
+const runPrompt = async (trimmedData, userID) => {
 
- 
+
   const dateTimePattern = /(\d{2}\/\d{2}\/\d{4}, \d{2}:\d{2})/g;
 
 
@@ -64,19 +64,19 @@ const runPrompt = async (trimmedData,userID) => {
   const wordListPrompt = "Please analyze the following paragraph and make a list of the top 4 single-word positive and negative words found in the text.";
 
   try {
-    
+
     const chatCompletion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
-      messages: [{"role": "user", "content": sentimentPrompt}, {"role": "user", "content": trimmedData}],
+      messages: [{ "role": "user", "content": sentimentPrompt }, { "role": "user", "content": trimmedData }],
       max_tokens: 1000,
     });
 
     const sentimentResponse = chatCompletion.choices[0].message.content;
 
-   
+
     const wordListCompletion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
-      messages: [{"role": "user", "content": wordListPrompt}, {"role": "user", "content": trimmedData}],
+      messages: [{ "role": "user", "content": wordListPrompt }, { "role": "user", "content": trimmedData }],
       max_tokens: 500,  // Adjust max tokens as needed
     });
 
@@ -90,7 +90,7 @@ const runPrompt = async (trimmedData,userID) => {
     let isPositiveList = true;
 
     for (const line of lines) {
-      if (line.startsWith('Positive words:' ) || line.startsWith('Single-word positive words:') ){
+      if (line.startsWith('Positive words:') || line.startsWith('Single-word positive words:')) {
         isPositiveList = true;
       } else if (line.startsWith('Negative words:') || line.startsWith('Single-word negative words:')) {
         isPositiveList = false;
@@ -113,8 +113,8 @@ const runPrompt = async (trimmedData,userID) => {
 
     const { pos_percent, neg_percent, mid_percent } = sentimentApiResponse.data;
 
-	const sentimentType = "chat";
-  const jsonResponse = {
+    const sentimentType = "chat";
+    const jsonResponse = {
       openai_response: sentimentResponse,
       sentiment_scores: {
         positive: pos_percent,
@@ -123,23 +123,23 @@ const runPrompt = async (trimmedData,userID) => {
       },
       positive_words: positiveWords,
       negative_words: negativeWords,
-      start_date: startDate, 
-      end_date: endDate,   
+      start_date: startDate,
+      end_date: endDate,
     };
-	const newReport = new Report({
-		userId: userID, 
-		sentimentType: sentimentType, 
-		result: jsonResponse,
-	});
-	newReport.save()
-    .then((report) => {
-        console.log("Report saved:", report);
-    })
-    .catch((error) => {
-        console.error("Error saving report:", error);
+    const newReport = new Report({
+      userId: userID,
+      sentimentType: sentimentType,
+      result: jsonResponse,
     });
+    newReport.save()
+      .then((report) => {
+        console.log("Report saved:", report);
+      })
+      .catch((error) => {
+        console.error("Error saving report:", error);
+      });
 
-    
+
 
     return jsonResponse;
   } catch (error) {
@@ -160,55 +160,55 @@ const runPrompt = async (trimmedData,userID) => {
 
 // Login and Sign up setup
 router.post("/userregister", async (req, res) => {
-	const password = req.body.password;
-	const email=req.body.email;
-	const username=req.body.username;
-	const confPassword=req.body.confPassword;
-	const admin=false;
+  const password = req.body.password;
+  const email = req.body.email;
+  const username = req.body.username;
+  const confPassword = req.body.confPassword;
+  const admin = false;
 
-	if (!password || !email || !username|| !confPassword )
-		return res.status(400).send("One or more of the fields are missing.");
+  if (!password || !email || !username || !confPassword)
+    return res.status(400).send("One or more of the fields are missing.");
 
-	//checking for multiple accounts for a single email
-	const emailcheck= await User.find({email:email});
-	if(emailcheck.length >0) return res.status(400).send("Only one account per email address is allowed");
+  //checking for multiple accounts for a single email
+  const emailcheck = await User.find({ email: email });
+  if (emailcheck.length > 0) return res.status(400).send("Only one account per email address is allowed");
 
-	if(password!=confPassword) return res.status(400).send("Password and Confirm Password do not match");
+  if (password != confPassword) return res.status(400).send("Password and Confirm Password do not match");
 
-	// add user
-	bcrypt.hash(password, saltRounds, async function(err, hash) {
-		const newUser = new User({password:hash, username,email,admin });
-		return res.json(await newUser.save());
-	});
-	
+  // add user
+  bcrypt.hash(password, saltRounds, async function (err, hash) {
+    const newUser = new User({ password: hash, username, email, admin });
+    return res.json(await newUser.save());
+  });
+
 });
 
 router.post("/userlogin", async (req, res) => {
-	const { email, password } = req.body;
+  const { email, password } = req.body;
 
-	if (!email || !password)
-		return res.status(400).send("Missing email or password");
+  if (!email || !password)
+    return res.status(400).send("Missing email or password");
 
-	// checking if email exists
-	const emails = await User.find({ email: email });
-	if (emails.length === 0) return res.status(400).send("Email is incorrect");
+  // checking if email exists
+  const emails = await User.find({ email: email });
+  if (emails.length === 0) return res.status(400).send("Email is incorrect");
 
-	const user = emails[0];
+  const user = emails[0];
 
-	bcrypt.compare(password, user.password, async function(err, result) {
-		if(result==false) return res.status(400).send("Incorrect password");
+  bcrypt.compare(password, user.password, async function (err, result) {
+    if (result == false) return res.status(400).send("Incorrect password");
 
-		// sending token
-		const token =jwt.sign(
-		{
-			id: user._id,
-		},
-		config.jwtSecret,{expiresIn:"1d"}
-		);
-		res.setHeader("token", token);
-		const name=user.username;
-		res.json({ token,name });
-	});
+    // sending token
+    const token = jwt.sign(
+      {
+        id: user._id,
+      },
+      config.jwtSecret, { expiresIn: "1d" }
+    );
+    res.setHeader("token", token);
+    const name = user.username;
+    res.json({ token, name });
+  });
 });
 
 
@@ -216,73 +216,73 @@ router.post("/userlogin", async (req, res) => {
 
 //Text analysis route
 
-router.post('/upload',isUser, upload.single('input_file'), async (req, res) => {
-	if (!req.file) {
-	  return res.status(400).send('No file uploaded.');
-	}
-	
-	const uploadedFilePath = req.file.path;
-    const userID = req.auth.user._id;
-	
-	fs.readFile(uploadedFilePath, 'utf-8', async (err, data) => {
-	  if (err) {
-		console.error('Error reading file:', err);
-		return res.status(500).send('Error reading file.');
-	  }
-  
-  
-	  const cleanedData = data.replace(/\s+/g, ' ').trim();
-  
-  
-	  const maxLength = 5937;
-	  const trimmedData = cleanedData.substring(0, maxLength);
-  
-	  const encodedParams = new URLSearchParams();
-  encodedParams.set('source_language', 'auto');
-  encodedParams.set('target_language', 'en');
-  encodedParams.set('text', trimmedData);
-  
-  const options = {
-	method: 'POST',
-	url: 'https://text-translator2.p.rapidapi.com/translate',
-	headers: {
-	  'content-type': 'application/x-www-form-urlencoded',
-	  'X-RapidAPI-Key': '1fc0d30d09msha2ceeef9299ebf2p155b1ejsnb96c4ac07bf8',
-	  'X-RapidAPI-Host': 'text-translator2.p.rapidapi.com'
-	},
-	data: encodedParams,
-  };
-	  
-  
-  
-	  try {
-		// const result = await runPrompt(trimmedData);
-
-		const result = await axios.request(options);
-		const results = await runPrompt(result.data["data"]["translatedText"], userID);
-		res.status(200).json(results);
-		  
-	  } catch (error) {
-		res.status(500).send(error.message);
-	  }
-	});
-  });
-
-
-
-  //Get reports of the user that is logged in
-  router.get("/reports",isUser, async (req, res) => {
-      const userID = req.auth.user._id;
-      const reports = await Report.find({userId:userID});
-      res.json(reports);
+router.post('/upload', isUser, upload.single('input_file'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('No file uploaded.');
   }
-  );
 
-  
+  const uploadedFilePath = req.file.path;
+  const userID = req.auth.user._id;
+
+  fs.readFile(uploadedFilePath, 'utf-8', async (err, data) => {
+    if (err) {
+      console.error('Error reading file:', err);
+      return res.status(500).send('Error reading file.');
+    }
+
+
+    const cleanedData = data.replace(/\s+/g, ' ').trim();
+
+
+    const maxLength = 5937;
+    const trimmedData = cleanedData.substring(0, maxLength);
+
+    const encodedParams = new URLSearchParams();
+    encodedParams.set('source_language', 'auto');
+    encodedParams.set('target_language', 'en');
+    encodedParams.set('text', trimmedData);
+
+    const options = {
+      method: 'POST',
+      url: 'https://text-translator2.p.rapidapi.com/translate',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        'X-RapidAPI-Key': process.env.RAPID_API_KEY2,
+        'X-RapidAPI-Host': 'text-translator2.p.rapidapi.com'
+      },
+      data: encodedParams,
+    };
+
+
+
+    try {
+      // const result = await runPrompt(trimmedData);
+
+      const result = await axios.request(options);
+      const results = await runPrompt(result.data["data"]["translatedText"], userID);
+      res.status(200).json(results);
+
+    } catch (error) {
+      res.status(500).send(error.message);
+    }
+  });
+});
+
+
+
+//Get reports of the user that is logged in
+router.get("/reports", isUser, async (req, res) => {
+  const userID = req.auth.user._id;
+  const reports = await Report.find({ userId: userID });
+  res.json(reports);
+}
+);
 
 
 
 
-  
+
+
+
 
 module.exports = router;
