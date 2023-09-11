@@ -11,7 +11,7 @@ async function authMiddleware(req, res, next) {
 	}
 
 	try {
-		const verified = jwt.verify(token, config.jwtSecret);
+		const verified = jwt.verify(token, process.env.JWT_SECRET);
 		if (!verified) {
 			req.auth = { user: false };
 			return next();
@@ -28,5 +28,5 @@ async function authMiddleware(req, res, next) {
 }
 
 
-module.exports=authMiddleware;
+module.exports = authMiddleware;
 

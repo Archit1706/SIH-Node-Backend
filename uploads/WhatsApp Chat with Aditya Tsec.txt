@@ -2087,10 +2087,6 @@ Your presence is enough sir🫡
 26/01/2023, 10:59 - Aditya Tsec: Chalega
 26/01/2023, 12:02 - Aditya Tsec: https://meet.google.com/toj-zdau-ywt
 26/01/2023, 12:02 - Aneesh: Joining one sec
-26/01/2023, 12:33 - Aneesh: module.exports = {
-	jwtSecret: "secret",
-	tokenLife: 60 * 60 * 24,
-};
 26/01/2023, 15:40 - Aditya Tsec: 5 baje tak aate hai meeting me
 26/01/2023, 15:40 - Aditya Tsec: *5 baje aate hai meeting hai
 26/01/2023, 15:45 - Aneesh: Okay

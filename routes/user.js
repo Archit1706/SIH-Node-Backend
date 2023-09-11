@@ -203,7 +203,7 @@ router.post("/userlogin", async (req, res) => {
       {
         id: user._id,
       },
-      config.jwtSecret, { expiresIn: "1d" }
+      process.env.JWT_SECRET, { expiresIn: "1d" }
     );
     res.setHeader("token", token);
     const name = user.username;
